@@ -29,7 +29,9 @@ def calc_half_life(vd, cl):
 
 def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl, 
                         x_vd, y_vd, b_vd, log_a_vd, 
-                        x_human_cl, x_human_vd):
+                        x_human_cl, x_human_vd,
+                        x_label_cl, y_label_cl
+                        ):
     """
     하나의 Figure에 subplot(1행2열)을 만들고,
     왼쪽 그래프(CL), 오른쪽 그래프(Vd)를 각각 그림.
@@ -55,8 +57,8 @@ def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl,
     y_human_cl = b_cl * x_human_cl + log_a_cl
     axes[0].scatter([x_human_cl], [y_human_cl], color='green', marker='x', s=80, label='Human CL predicted')
 
-    axes[0].set_xlabel('Log10(BW(kg))')
-    axes[0].set_ylabel('Log10(CL(L/hr/kg))')
+    axes[0].set_xlabel(f'{x_label_cl}')
+    axes[0].set_ylabel(f'{y_label_cl}')
     axes[0].set_title('CL regression')
     axes[0].legend()
 
@@ -161,7 +163,7 @@ def calc_mlp(animal_df, human_df):
 
     # CL part
     x_cl= np.log10(dfA["BW(kg)"].values)
-    cl_times_mlp= dfA["CL(L/hr/kg)"] * dfA["MLP(year)"]
+    cl_times_mlp= dfA["CL(L/hr/kg)"].values * dfA["MLP(year)"].values * 365 * 24
     y_cl= np.log10(cl_times_mlp)
     b_roe, log_a_roe= np.polyfit(x_cl, y_cl, 1)
     a_roe= 10**log_a_roe
@@ -177,8 +179,9 @@ def calc_mlp(animal_df, human_df):
     rowH= dfH.iloc[0]
     BW_h= float(rowH["BW(kg)"]) if rowH["BW(kg)"]>0 else 70.0
     MLP_h= float(rowH["MLP(year)"]) if rowH["MLP(year)"]>0 else 93.0
+    MLP_h_hours = MLP_h * 365 * 24
 
-    CL_h= (a_roe*(BW_h**b_roe))/(BW_h * MLP_h)
+    CL_h= (a_roe*(BW_h**b_roe))/(BW_h * MLP_h_hours)
     Vd_h= (a_vd*(BW_h**b_vd))/BW_h
     t12= calc_half_life(Vd_h,CL_h)
 
@@ -186,7 +189,8 @@ def calc_mlp(animal_df, human_df):
     create_two_subplots(
         x_cl, y_cl, b_roe, log_a_roe,
         x_vd, y_vd, b_vd, log_a_vd,
-        np.log10(BW_h), np.log10(BW_h)
+        np.log10(BW_h), np.log10(BW_h),
+        "BW(kg)","MLP*CL"
     )
 
     return (b_roe, b_vd, CL_h, Vd_h, t12)
@@ -228,7 +232,8 @@ def calc_brw(animal_df, human_df):
     create_two_subplots(
         x_cl, y_cl, b_brw, log_a_brw,
         x_vd, y_vd, b_vd, log_a_vd,
-        np.log10(BW_h), np.log10(BW_h)
+        np.log10(BW_h), np.log10(BW_h),
+        "BW(kg)","BrW*CL"
     )
 
     return (b_brw, b_vd, CL_h, Vd_h, t12)
