@@ -47,7 +47,7 @@ def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl,
 
     # --- 왼쪽 subplot (CL)
     # 동물 데이터 산점도
-    axes[0].scatter(x_cl, y_cl, label='Animal CL data points', color='blue')
+    axes[0].scatter(x_cl, y_cl, label=f'Animal {y_label_cl} data points', color='blue')
     # 회귀선
     xs = np.linspace(min(x_cl)-0.2, x_human_cl+0.2, 50)
     ys = b_cl * xs + log_a_cl
@@ -55,7 +55,7 @@ def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl,
 
     # 사람 BW (log scale) → 예측값
     y_human_cl = b_cl * x_human_cl + log_a_cl
-    axes[0].scatter([x_human_cl], [y_human_cl], color='green', marker='x', s=80, label='Human CL predicted')
+    axes[0].scatter([x_human_cl], [y_human_cl], color='green', marker='x', s=80, label=f'Human {y_label_cl} predicted')
 
     axes[0].set_xlabel(f'{x_label_cl}')
     axes[0].set_ylabel(f'{y_label_cl}')
@@ -144,7 +144,8 @@ def calc_sa(animal_df, human_df):
     create_two_subplots(
         x_cl, y_cl, b_cl, log_a_cl,
         x_vd, y_vd, b_vd, log_a_vd,
-        np.log10(BW_h), np.log10(BW_h)  # 사람 BW는 동일
+        np.log10(BW_h), np.log10(BW_h),  # 사람 BW는 동일
+        "BW(kg)","CL"
     )
 
     return (b_cl,b_vd,CL_h,Vd_h,t12)
