@@ -57,8 +57,8 @@ def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl,
     y_human_cl = b_cl * x_human_cl + log_a_cl
     axes[0].scatter([x_human_cl], [y_human_cl], color='green', marker='x', s=80, label=f'Human {y_label_cl} predicted')
 
-    axes[0].set_xlabel(f'{x_label_cl}')
-    axes[0].set_ylabel(f'{y_label_cl}')
+    axes[0].set_xlabel(f'Log10 {x_label_cl}')
+    axes[0].set_ylabel(f'Log10 {y_label_cl}')
     axes[0].set_title('CL regression')
     axes[0].legend()
 
@@ -74,8 +74,8 @@ def create_two_subplots(x_cl, y_cl, b_cl, log_a_cl,
     y_human_vd = b_vd * x_human_vd + log_a_vd
     axes[1].scatter([x_human_vd], [y_human_vd], color='green', marker='x', s=80, label='Human Vd predicted')
 
-    axes[1].set_xlabel('Log10(BW(kg))')
-    axes[1].set_ylabel('Log10(Vd(L))')
+    axes[1].set_xlabel('Log10 (BW (kg))')
+    axes[1].set_ylabel('Log10 (Vd (L))')
     axes[1].set_title('Vd regression')
     axes[1].legend()
 
@@ -114,27 +114,27 @@ def calc_sa(animal_df, human_df):
     - 사람: CL_h= a*(BW_h^b)
             Vd_h= a_vd*(BW_h^b_vd)
     """
-    dfA = animal_df.dropna(subset=["BW(kg)","CL(L/hr)","Vd(L)"])
-    dfA = dfA[(dfA["BW(kg)"]>0)&(dfA["CL(L/hr)"]>0)&(dfA["Vd(L)"]>0)]
+    dfA = animal_df.dropna(subset=["BW (kg)","CL (L/hr)","Vd (L)"])
+    dfA = dfA[(dfA["BW (kg)"]>0)&(dfA["CL (L/hr)"]>0)&(dfA["Vd (L)"]>0)]
     if len(dfA)<2:
         return None
 
     # CL part
-    x_cl= np.log10(dfA["BW(kg)"].values)
-    y_cl= np.log10(dfA["CL(L/hr)"].values)
+    x_cl= np.log10(dfA["BW (kg)"].values)
+    y_cl= np.log10(dfA["CL (L/hr)"].values)
     b_cl, log_a_cl= np.polyfit(x_cl, y_cl, 1)
     a_cl= 10**log_a_cl
 
     # Vd part
-    x_vd= np.log10(dfA["BW(kg)"].values)
-    y_vd= np.log10(dfA["Vd(L)"].values)
+    x_vd= np.log10(dfA["BW (kg)"].values)
+    y_vd= np.log10(dfA["Vd (L)"].values)
     b_vd, log_a_vd= np.polyfit(x_vd, y_vd, 1)
     a_vd= 10**log_a_vd
 
     # 사람 DF(1줄)에서 BW_h
-    dfH = human_df.dropna(subset=["BW(kg)"])
+    dfH = human_df.dropna(subset=["BW (kg)"])
     rowH= dfH.iloc[0]
-    BW_h= float(rowH["BW(kg)"]) if rowH["BW(kg)"]>0 else 70.0
+    BW_h= float(rowH["BW (kg)"]) if rowH["BW (kg)"]>0 else 70.0
 
     CL_h= (a_cl*(BW_h**b_cl))
     Vd_h= (a_vd*(BW_h**b_vd))
@@ -145,7 +145,7 @@ def calc_sa(animal_df, human_df):
         x_cl, y_cl, b_cl, log_a_cl,
         x_vd, y_vd, b_vd, log_a_vd,
         np.log10(BW_h), np.log10(BW_h),  # 사람 BW는 동일
-        "BW(kg)","CL"
+        "BW (kg)","CL"
     )
 
     return (b_cl,b_vd,CL_h,Vd_h,t12)
@@ -157,29 +157,29 @@ def calc_mlp(animal_df, human_df):
     - 사람: CL_h= (a_roe*(BW_h^b_roe)) / MLP_h
     - Vd => SA
     """
-    dfA= animal_df.dropna(subset=["BW(kg)","CL(L/hr)","Vd(L)","MLP(year)"])
-    dfA= dfA[(dfA["BW(kg)"]>0)&(dfA["CL(L/hr)"]>0)&(dfA["Vd(L)"]>0)&(dfA["MLP(year)"]>0)]
+    dfA= animal_df.dropna(subset=["BW (kg)","CL (L/hr)","Vd (L)","MLP (year)"])
+    dfA= dfA[(dfA["BW (kg)"]>0)&(dfA["CL (L/hr)"]>0)&(dfA["Vd (L)"]>0)&(dfA["MLP (year)"]>0)]
     if len(dfA)<2:
         return None
 
     # CL part
-    x_cl= np.log10(dfA["BW(kg)"].values)
-    cl_times_mlp= dfA["CL(L/hr)"].values * dfA["MLP(year)"].values * 365 * 24
+    x_cl= np.log10(dfA["BW (kg)"].values)
+    cl_times_mlp= dfA["CL (L/hr)"].values * dfA["MLP (year)"].values * 365 * 24
     y_cl= np.log10(cl_times_mlp)
     b_roe, log_a_roe= np.polyfit(x_cl, y_cl, 1)
     a_roe= 10**log_a_roe
 
     # Vd => SA
-    x_vd= np.log10(dfA["BW(kg)"].values)
-    y_vd= np.log10(dfA["Vd(L)"].values)
+    x_vd= np.log10(dfA["BW (kg)"].values)
+    y_vd= np.log10(dfA["Vd (L)"].values)
     b_vd, log_a_vd= np.polyfit(x_vd, y_vd, 1)
     a_vd= 10**log_a_vd
 
     # Human row
-    dfH= human_df.dropna(subset=["BW(kg)","MLP(year)"])
+    dfH= human_df.dropna(subset=["BW (kg)","MLP (year)"])
     rowH= dfH.iloc[0]
-    BW_h= float(rowH["BW(kg)"]) if rowH["BW(kg)"]>0 else 70.0
-    MLP_h= float(rowH["MLP(year)"]) if rowH["MLP(year)"]>0 else 93.0
+    BW_h= float(rowH["BW (kg)"]) if rowH["BW (kg)"]>0 else 70.0
+    MLP_h= float(rowH["MLP (year)"]) if rowH["MLP (year)"]>0 else 93.0
     MLP_h_hours = MLP_h * 365 * 24
 
     CL_h= (a_roe*(BW_h**b_roe))/MLP_h_hours
@@ -191,7 +191,7 @@ def calc_mlp(animal_df, human_df):
         x_cl, y_cl, b_roe, log_a_roe,
         x_vd, y_vd, b_vd, log_a_vd,
         np.log10(BW_h), np.log10(BW_h),
-        "BW(kg)","MLP*CL"
+        "BW (kg)","MLP*CL"
     )
 
     return (b_roe, b_vd, CL_h, Vd_h, t12)
@@ -203,27 +203,27 @@ def calc_brw(animal_df, human_df):
     - 사람: CL_h= (a_brw*(BW_h^b_brw)) / BrW_h
     - Vd => SA
     """
-    dfA= animal_df.dropna(subset=["BW(kg)","CL(L/hr)","Vd(L)","BrW(kg)"])
-    dfA= dfA[(dfA["BW(kg)"]>0)&(dfA["CL(L/hr)"]>0)&(dfA["Vd(L)"]>0)&(dfA["BrW(kg)"]>0)]
+    dfA= animal_df.dropna(subset=["BW (kg)","CL (L/hr)","Vd (L)","BrW (kg)"])
+    dfA= dfA[(dfA["BW (kg)"]>0)&(dfA["CL (L/hr)"]>0)&(dfA["Vd (L)"]>0)&(dfA["BrW (kg)"]>0)]
     if len(dfA)<2:
         return None
 
-    x_cl= np.log10(dfA["BW(kg)"].values)
-    cl_times_brw= dfA["CL(L/hr)"].values * dfA["BrW(kg)"].values
+    x_cl= np.log10(dfA["BW (kg)"].values)
+    cl_times_brw= dfA["CL (L/hr)"].values * dfA["BrW (kg)"].values
     y_cl= np.log10(cl_times_brw)
     b_brw, log_a_brw= np.polyfit(x_cl, y_cl, 1)
     a_brw= 10**log_a_brw
 
     # Vd => SA
-    x_vd= np.log10(dfA["BW(kg)"].values)
-    y_vd= np.log10(dfA["Vd(L)"].values)
+    x_vd= np.log10(dfA["BW (kg)"].values)
+    y_vd= np.log10(dfA["Vd (L)"].values)
     b_vd, log_a_vd= np.polyfit(x_vd, y_vd, 1)
     a_vd= 10**log_a_vd
 
-    dfH= human_df.dropna(subset=["BW(kg)","BrW(kg)"])
+    dfH= human_df.dropna(subset=["BW (kg)","BrW (kg)"])
     rowH= dfH.iloc[0]
-    BW_h= float(rowH["BW(kg)"]) if rowH["BW(kg)"]>0 else 70.0
-    BrW_h= float(rowH["BrW(kg)"]) if rowH["BrW(kg)"]>0 else 1.53
+    BW_h= float(rowH["BW (kg)"]) if rowH["BW (kg)"]>0 else 70.0
+    BrW_h= float(rowH["BrW (kg)"]) if rowH["BrW (kg)"]>0 else 1.53
 
     CL_h= (a_brw*(BW_h**b_brw)) / BrW_h
     Vd_h= (a_vd*(BW_h**b_vd))
@@ -234,7 +234,7 @@ def calc_brw(animal_df, human_df):
         x_cl, y_cl, b_brw, log_a_brw,
         x_vd, y_vd, b_vd, log_a_vd,
         np.log10(BW_h), np.log10(BW_h),
-        "BW(kg)","BrW*CL"
+        "BW (kg)","BrW*CL"
     )
 
     return (b_brw, b_vd, CL_h, Vd_h, t12)
@@ -257,11 +257,11 @@ def main():
     st.subheader("1) Animal Data Table")
     animal_init = pd.DataFrame(columns=[
         "Species",            
-        "BW(kg)",            
-        "CL(L/hr)",
-        "Vd(L)",
-        "MLP(year)",         
-        "BrW(kg)"           
+        "BW (kg)",            
+        "CL (L/hr)",
+        "Vd (L)",
+        "MLP (year)",         
+        "BrW (kg)"           
     ])
     animal_df = st.data_editor(
         animal_init,
@@ -275,9 +275,9 @@ def main():
     #-----------------------------------------
     st.subheader("2) Human Data Table (1 row)")
     human_init = pd.DataFrame({
-        "BW(kg)": [70.0],
-        "MLP(year)": [93.0],
-        "BrW(kg)": [1.53]
+        "BW (kg)": [70.0],
+        "MLP (year)": [93.0],
+        "BrW (kg)": [1.53]
     })
     human_df = st.data_editor(
         human_init,
@@ -312,12 +312,12 @@ def main():
 
     if st.button("Calculate"):
         dfA = animal_df.copy()
-        for c in ["BW(kg)","CL(L/hr)","Vd(L)","MLP(year)","BrW(kg)"]:
+        for c in ["BW (kg)","CL (L/hr)","Vd (L)","MLP (year)","BrW (kg)"]:
             if c in dfA.columns:
                 dfA[c] = pd.to_numeric(dfA[c], errors='coerce')
 
         dfH = human_df.copy()
-        for c in ["BW(kg)","MLP(year)","BrW(kg)"]:
+        for c in ["BW (kg)","MLP (year)","BrW (kg)"]:
             if c in dfH.columns:
                 dfH[c] = pd.to_numeric(dfH[c], errors='coerce')
 
@@ -330,9 +330,9 @@ def main():
                 st.error("Animal row must have a valid 'Species'!")
                 return
             sp_name= rowA["Species"]
-            BW_an = float(rowA["BW(kg)"]) if rowA["BW(kg)"]>0 else 0.0
-            cl_an= float(rowA["CL(L/hr)"]) if rowA["CL(L/hr)"]>0 else 0.0
-            vd_an= float(rowA["Vd(L)"]) if rowA["Vd(L)"]>0 else 0.0
+            BW_an = float(rowA["BW (kg)"]) if rowA["BW (kg)"]>0 else 0.0
+            cl_an= float(rowA["CL (L/hr)"]) if rowA["CL (L/hr)"]>0 else 0.0
+            vd_an= float(rowA["Vd (L)"]) if rowA["Vd (L)"]>0 else 0.0
 
             if BW_an<=0 or cl_an<=0 or vd_an<=0:
                 st.error("Animal BW, CL, Vd must be >0 for single species method.")
@@ -342,7 +342,7 @@ def main():
                 st.error("Need at least 1 row in Human table!")
                 return
             rowH= dfH.iloc[0]
-            BW_h = float(rowH["BW(kg)"]) if rowH["BW(kg)"]>0 else 0.0
+            BW_h = float(rowH["BW (kg)"]) if rowH["BW (kg)"]>0 else 0.0
             
             if BW_h<=0:
                 st.error("Human BW must be >0 for single species method.")
@@ -350,10 +350,11 @@ def main():
 
             c_h, v_h, t12= predict_species1(sp_name, BW_h, BW_an, cl_an, vd_an)
             results = pd.DataFrame({
-                "Species": [sp_name],
-                "CL_h": [f"{c_h:.3f}"],
-                "Vd_h": [f"{v_h:.3f}"],
-                "t1/2": [f"{t12:.3f}"],
+                "Base": [sp_name],
+                "Species": "Human",
+                "CL (L/hr)": [f"{c_h:.3f}"],
+                "Vd (L)": [f"{v_h:.3f}"],
+                "t1/2 (hr)": [f"{t12:.3f}"],
             })
             st.subheader("Calculation Results")
             st.table(results)
@@ -365,9 +366,10 @@ def main():
             else:
                 b_cl,b_vd,CL_h,Vd_h,t12= res
                 results = pd.DataFrame({
-                    "CL_h": [f"{CL_h:.3f}"],
-                    "Vd_h": [f"{Vd_h:.3f}"],
-                    "t1/2": [f"{t12:.3f}"],
+                    "Species": "Human",
+                    "CL (L/hr)": [f"{CL_h:.3f}"],
+                    "Vd (L)": [f"{Vd_h:.3f}"],
+                    "t1/2 (hr)": [f"{t12:.3f}"],
                 })
                 st.subheader("Calculation Results [SA]")
                 st.table(results)
@@ -379,9 +381,10 @@ def main():
             else:
                 b_roe,b_vd,CL_h,Vd_h,t12= res
                 results = pd.DataFrame({
-                    "CL_h": [f"{CL_h:.3f}"],
-                    "Vd_h": [f"{Vd_h:.3f}"],
-                    "t1/2": [f"{t12:.3f}"],
+                    "Species": "Human",                    
+                    "CL (L/hr)": [f"{CL_h:.3f}"],
+                    "Vd (L)": [f"{Vd_h:.3f}"],
+                    "t1/2 (hr)": [f"{t12:.3f}"],
                 })
                 st.subheader("Calculation Results [MLP]")
                 st.table(results)
@@ -393,8 +396,9 @@ def main():
             else:
                 b_brw,b_vd,CL_h,Vd_h,t12= res
                 results = pd.DataFrame({
-                    "CL_h": [f"{CL_h:.3f}"],
-                    "Vd_h": [f"{Vd_h:.3f}"],
+                    "Species": "Human",
+                    "CL (L/hr)": [f"{CL_h:.3f}"],
+                    "Vd (L)": [f"{Vd_h:.3f}"],
                     "t1/2": [f"{t12:.3f}"],
                 })
                 st.subheader("Calculation Results [BrW]")
